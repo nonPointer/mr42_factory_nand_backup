@@ -1,38 +1,75 @@
-# MR42 Factory NAND Backup
+# Meraki MR42 — Factory NAND Backup
 
-Meraki MR42（IPQ806x / IPQ8064）出厂固件在 **Diagnostic Mode**（免拆机诊断模式，
-telnet root @ 192.168.1.1）下 dump 出的 flash 分区备份，刷 OpenWrt 前留存。
+Cisco Meraki **MR42**（Qualcomm IPQ8064 / ipq806x）刷 OpenWrt 之前的**出厂 NAND 完整备份**。
 
 - 备份日期：2026-08-20
-- 来源固件：`RNAQ-MR1 v0.3.a` / QSDK `enterprise_ap160` / Linux 3.4.103
-- 方法：诊断模式 telnet 内 `dd if=/dev/mtdN`，经 nc 传回并校验 md5（与设备端逐字节一致）
+- 出厂固件：`RNAQ-MR1 v0.3.a` / QSDK `IPQ806X.LN.1.3.4-CSu2(r00057.1)` / Linux 3.4.103
+- NAND：128 MiB，page 2048 B，erase 128 KiB，OOB 64 B（`nandid 1580a101`）
+- 全部文件经 `xz` 压缩；`SHA256SUMS.txt` 记录的是**解压后 `.bin`** 的校验值
 
-## ⚠️ 关于「完整 NAND」的重要说明
+```sh
+xz -d factory-nand/*.xz extras/*.xz
+shasum -a256 -c SHA256SUMS.txt
+```
 
-诊断模式的精简 initramfs **只把下列 4 个分区映射成 mtd 设备**，
-整片 128MB NAND 里的 `bootkernel1/2`、~70MB `ubi` rootfs 等**并未暴露**，
-因此**无法从诊断模式 dump 整片 NAND**。真正每台唯一、丢失不可复原的是
-`cal`（射频校准 + MAC）与 `ART`——这两个已完整备份。完整整片 dump 需拆机接
-UART，在正常/OpenWrt initramfs 下才能看到全部 13 个分区。
+## `factory-nand/` — 出厂 13 个分区（完整）
 
-## 文件（诊断模式 `/proc/mtd`）
+在 cryptid OpenWrt initramfs 下 dump（此时全部分区才可见；Meraki 诊断模式只暴露 4 个）。
 
-| 文件 | mtd | 大小 | erasesize | 载体 | 内容 |
-|---|---|---|---|---|---|
-| `mr42-mtd0-cal.bin`    | mtd0 | 0x200000 (2 MiB)    | 0x20000 | NAND | UBI 卷：射频校准 + MAC（重要） |
-| `mr42-mtd1-uboot.bin`  | mtd1 | 0x180000 (1.5 MiB)  | 0x20000 | NAND | 出厂 u-boot（刷机写 mtd1 即此分区） |
-| `mr42-mtd2-m25p80.bin` | mtd2 | 0x10000 (64 KiB)    | 0x1000  | SPI  | m25p80 (pm25lv512) |
-| `mr42-mtd3-ART.bin`    | mtd3 | 0x136000 (~1.2 MiB) | 0x1f000 | -    | ART（无线校准，切勿丢失） |
+| 文件 | 分区 | 大小 | 说明 |
+|---|---|---|---|
+| `mtd00-sbl1.bin` | sbl1 | 256 KiB | 一级 bootloader |
+| `mtd01-mibib.bin` | mibib | 1.25 MiB | 分区表 |
+| `mtd02-sbl2.bin` | sbl2 | 1.25 MiB | 二级 bootloader |
+| `mtd03-sbl3.bin` | sbl3 | 2.5 MiB | 三级 bootloader |
+| `mtd04-ddrconfig.bin` | ddrconfig | 1.125 MiB | DDR 参数 |
+| `mtd05-ssd.bin` | ssd | 1.125 MiB | — |
+| `mtd06-tz.bin` | tz | 2.5 MiB | TrustZone |
+| `mtd07-rpm.bin` | rpm | 2.5 MiB | RPM 固件 |
+| **`mtd08-u-boot.bin`** | u-boot | 1.5 MiB | **出厂 u-boot（恢复原厂的关键）**※ |
+| `mtd09-bootkernel1.bin` | bootkernel1 | 10.5 MiB | Meraki 内核槽 1 |
+| `mtd10-bootkernel2.bin` | bootkernel2 | 10.5 MiB | Meraki 内核槽 2 |
+| `mtd11-ubi.bin` | ubi | 70.75 MiB | Meraki rootfs（UBI：diagnostic1 / part.safe / part.old / storage） |
+| `mtd12-art.bin` | art | 2 MiB | **射频校准 + MAC，绝不可丢** |
 
-md5 见 `MD5SUMS.txt`。
+※ `mtd08-u-boot.bin` 取自**换 u-boot 之前**在 Meraki 诊断模式下的 dump（诊断模式里它是 `mtd1`）。
+其余 12 个分区在 initramfs 下 dump，彼时 mtd8 已被 cryptid u-boot 覆盖 —— 故单独回填，
+保证本目录是一份**纯出厂**镜像。
 
-## 恢复（回原厂 u-boot，示例）
+## `extras/`
 
-在诊断模式 telnet：
+| 文件 | 说明 |
+|---|---|
+| `spi-m25p80.bin` | 板载 SPI flash（pm25lv512，64 KiB）。**只有诊断模式能 dump**，正常模式未映射 |
+| `ubi1-ART-volume.bin` | `ubi1` 上 ART 卷的逻辑内容（1.21 MiB）。`mtd12-art.bin` 是含 UBI 元数据的整分区 |
+| `mtd08-u-boot-AFTER-cryptid-flash.bin` | 刷入后的 **cryptid 网络版 u-boot**，仅作留档对照，**不是**出厂件 |
+
+## 已知的分区命名差异（踩过的坑）
+
+Meraki 诊断模式的 `/proc/mtd` 与正常/OpenWrt 下**编号和命名都不同**：
+
+| 诊断模式 | 正常模式 | 备注 |
+|---|---|---|
+| `mtd0 "cal"` | `mtd12 "art"` | **同一块**（md5 `68a42620…` 完全一致），只是叫法不同 |
+| `mtd1 "u-boot"` | `mtd8 "u-boot"` | 刷 u-boot 时选错编号会写坏别的分区 |
+| `mtd2 "m25p80"` | —（未映射） | SPI flash |
+| `mtd3 "ART"` | ≈ `ubi1` 的 ART 卷 | 逻辑卷内容，非整分区 |
+
+## 恢复出厂 u-boot（示例）
+
+Meraki 诊断模式下（此时 u-boot = `mtd1`）：
+
 ```sh
 echo 1 > /sys/devices/platform/msm_nand/boot_layout
-mtd erase /dev/mtd1
-nandwrite -pam /dev/mtd1 mr42-mtd1-uboot.bin
+flash_erase /dev/mtd1 0 0          # 用 flash_erase；本机上 `mtd erase` 会触发内核 Oops
+nandwrite -pam /dev/mtd1 mtd08-u-boot.bin
 echo 0 > /sys/devices/platform/msm_nand/boot_layout
 ```
-`cal` / `ART` 同理写回对应 mtd（非必要不要动）。
+
+> ⚠️ 擦写期间**只能有一个会话操作 NAND**。并发访问（如另开 telnet 跑 `nanddump` 看进度）
+> 会在 `part_fill_badblockstats` 触发内核 Oops，把 NAND 控制器整个冻住，只能断电恢复。
+
+## 免责声明
+
+仅为本人所有设备的备份留档。`art` / `cal` 含本机唯一的射频校准与 MAC，
+**不要**将其写入他人设备。

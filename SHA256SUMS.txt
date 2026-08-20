@@ -1,0 +1,19 @@
+# MR42 原厂 NAND 备份 — 解压后(.bin)的 sha256
+# 校验: xz -d *.xz 后 shasum -a256 -c SHA256SUMS.txt
+
+853acad5febca30cdfbcf7d772dd6d51bc9a2a08144dc636a4cd18c23718e3f1  factory-nand/mtd00-sbl1.bin
+c1da9f006a2364382a1e0304dc29040a9f18a5b34dc0e750363707486fe8b184  factory-nand/mtd01-mibib.bin
+8586df7596d729555c8df4368b0d772f80bfa7d41b4106f07fd84c107d0f38a9  factory-nand/mtd02-sbl2.bin
+eb8ceb994b8172482a042aed250f497e39f7dd8a90c147c2c90af4beea7d1498  factory-nand/mtd03-sbl3.bin
+92b537c53ac6ded58c358dbee81a2c7c8fd6a538e50d9fb00c74e09275085ed5  factory-nand/mtd04-ddrconfig.bin
+1797ac7e96f8d69cdbb1f1f0f356e3a38db78231388ca222f61bda82a6dabf2c  factory-nand/mtd05-ssd.bin
+541cc4f4e252cd2fe425194cce4163d3007140feca02bbd622bf3f00cab3b00a  factory-nand/mtd06-tz.bin
+6c855e6f88c00a94ef1e789b915a9efab11f1e93607d20526190881b430718d3  factory-nand/mtd07-rpm.bin
+0836bb307f8f86a9a00436e627871466a8c6b98eaea87aa6065292ec73b4da1f  factory-nand/mtd08-u-boot.bin
+2b8ac31af8260ff94d1db99445afbc03b05f0b4a076f86af00fbce2c25bfc22e  factory-nand/mtd09-bootkernel1.bin
+ae5d061e1e23aecfc2e283bb5bbae8a76844f8289316f3720aed593ae25c7ccd  factory-nand/mtd10-bootkernel2.bin
+25fc1d4ae2ce1f3625bdc47486825d94bd77233dde685079a04aee2f6122a8af  factory-nand/mtd11-ubi.bin
+04bc60b24f42fc0ace5e7be92946292ad25a10b0d3cfaa1671f34ec7dfb5e3a7  factory-nand/mtd12-art.bin
+77adfb3c28673ad14f9c7c8afd85ddc552839460aa362b7cfd589ef80c83384e  extras/mtd08-u-boot-AFTER-cryptid-flash.bin
+de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31  extras/spi-m25p80.bin
+c16de8ddaeb4a41e918db4ed0570800fc956e0409061ae9f7ba772297e6fa38a  extras/ubi1-ART-volume.bin
