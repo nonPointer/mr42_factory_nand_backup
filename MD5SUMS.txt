@@ -1,0 +1,6 @@
+# MR42 NAND/SPI 分区备份 (Diagnostic Mode 下可见的 4 个分区)
+# 备份时间: 2026-08-20  来源: 192.168.1.1 telnet root
+68a42620dcc07d66e4e02d7bfb9efd64  mr42-mtd0-cal.bin
+61df07b8b406882ddbae6b567b0b5551  mr42-mtd1-uboot.bin
+fcd6bcb56c1689fcef28b57c22475bad  mr42-mtd2-m25p80.bin
+6728b772eb111ff7b680c9f3425c8ffb  mr42-mtd3-ART.bin
