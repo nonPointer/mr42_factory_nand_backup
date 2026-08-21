@@ -73,3 +73,8 @@ echo 0 > /sys/devices/platform/msm_nand/boot_layout
 
 仅为本人所有设备的备份留档。`art` / `cal` 含本机唯一的射频校准与 MAC，
 **不要**将其写入他人设备。
+
+## 取证分析
+
+见 [`FORENSICS.md`](FORENSICS.md) —— 对这份 NAND 的完整逆向：Meraki 代号映射（Yowie=MR42）、RSA 签名锁、OpenWrt 血统、免拆机后门根因、LED/EEPROM 硬件全貌。
+
