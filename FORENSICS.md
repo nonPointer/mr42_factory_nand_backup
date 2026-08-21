@@ -412,6 +412,31 @@ boardData_AR900B_CUS239_negative_pwr_offset_5G_v2_007.bin
 （另：`www/` 是 Meraki 的 splash / 访客认证本地页面，`meraki_client_api.js`
 含 `lat`/`lng`/`speed_test_results_url` 等字段。）
 
+## 发现 12：24c64 EEPROM 实读 —— 设备「出生证」（收官）
+
+设备重新在线后 dump 出 8 KB EEPROM（`i2c 0-0056`），实数据仅 0.6%，
+布局与发现 10 从 `board_data_config` 符号推断的完全吻合：
+
+```
+0x00  35 33 31 31              magic "5311"（AR531x boarddata 格式）
+0x04  12 92                    校验和
+0x08  "meraki_Yowie 000000000" board_name  ← Yowie 硬编码在硬件里
+0x60  00 18 0a 00 01 xx        enet MAC（OUI 00:18:0A = 老 Meraki Inc，2007 注册）
+0x66  0c 8d db 71 ed xx        wlan MAC（OUI 0C:8D:DB = Cisco Meraki，收购后新块）
+0x7c  "Q2KD………"              序列号（Q2 开头 = 标准 Cisco Meraki 序列号格式）
+```
+
+三个收官结论：
+
+1. **Yowie=MR42 的终极实锤** —— 从固件 → DTB → 一路到**硬件 EEPROM**，
+   连出厂固件都不需要，芯片自己就记着 `meraki_Yowie`。
+2. **序列号 `Q2…`** —— 即 Meraki Dashboard 里添加设备用的那串。
+3. **两代 MAC OUI 并存** —— `00:18:0A`（老 Meraki Inc）与 `0C:8D:DB`（Cisco 收购后），
+   同一块板上并存，是产品跨越 2012 年收购的痕迹。
+
+符号推断（发现 10）与实读结果一致：`board_name` / `serial_num` /
+`enet0Mac` / `wlan0Mac` / checksum 全部对上。
+
 ## 挖掘小结
 
 从一份 80 MB 的原厂 NAND 备份，还原出：
@@ -432,7 +457,7 @@ boardData_AR900B_CUS239_negative_pwr_offset_5G_v2_007.bin
 - [x] ~~提取 Meraki rootfs~~ → 诊断系统 rootfs 已完整提取（发现 7）
 - [x] ~~ART 分区校准数据结构~~ → 三块 AR9300 EEPROM（发现 8）
 - [x] ~~24c64 EEPROM 结构~~ → serial/board/hwRev/4×MAC（发现 10，从工具符号还原）
-- [ ] 实读 24c64 字节（唯一剩项，需设备在线）
+- [x] ~~实读 24c64 字节~~ → board_name=meraki_Yowie + 序列号 + 2×MAC（发现 12）
 - [x] ~~`part.safe`/`part.old` FIT~~ → Meraki 产品固件 + RSA 签名锁（发现 9）
 - [x] ~~`storage` 卷~~ → 内核日志区（含设备 MAC），无云端凭据
 
